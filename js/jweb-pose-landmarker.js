@@ -25,6 +25,45 @@ window.max.bindInlet('draw_body', function (enable) {
   drawBody = enable;
 });
 
+window.max.bindInlet('set_mediadevice', async function (deviceLabel) {
+  let devices = await getMediaDeviceByLabel(deviceLabel);
+  if (!devices.length) {
+    window.max.outlet("error", `No video input device: "${deviceLabel}" exists.`);
+    return
+  }
+  const device = devices.shift();
+  video.srcObject = await navigator.mediaDevices.getUserMedia({video: {deviceId: device.deviceId}});
+});
+
+window.max.bindInlet('get_mediadevices', function () {
+  getMediaDevices()
+    .then((devices) => {
+      let mediadevices = [];
+      devices.forEach((device) => {
+        if (device.kind === "videoinput") {
+          mediadevices.push(device.label);
+        }
+      });
+      window.max.outlet.apply(window.max, ["mediadevices"].concat(mediadevices));
+    })
+    .catch((err) => {
+      window.max.outlet("error",`${err.name}: ${err.message}`);
+    });
+});
+
+const getMediaDevices = async () => {   
+  if (!navigator.mediaDevices?.enumerateDevices) {
+    window.max.outlet("error", "Cannot list available media devices.");
+    return []
+  }
+  return await navigator.mediaDevices.enumerateDevices();
+}
+
+const getMediaDeviceByLabel = async (deviceLabel) => {
+  let mediaDevices = await getMediaDevices();
+  return mediaDevices.filter(device => device.label == deviceLabel);
+}
+
 function onResultsPose(results) {
 
   canvas.save();
