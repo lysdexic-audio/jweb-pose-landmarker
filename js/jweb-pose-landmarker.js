@@ -67,19 +67,7 @@ window.max.bindInlet('set_mediadevice', async function (deviceLabel) {
 });
 
 window.max.bindInlet('get_mediadevices', function () {
-  getMediaDevices()
-    .then((devices) => {
-      let mediadevices = [];
-      devices.forEach((device) => {
-        if (device.kind === "videoinput") {
-          mediadevices.push(device.label);
-        }
-      });
-      window.max.outlet.apply(window.max, ["mediadevices"].concat(mediadevices));
-    })
-    .catch((err) => {
-      window.max.outlet("error",`${err.name}: ${err.message}`);
-    });
+  getVideoDevicesForMax();
 });
 
 const getMediaDevices = async () => {   
@@ -94,6 +82,23 @@ const getMediaDeviceByLabel = async (deviceLabel) => {
   let mediaDevices = await getMediaDevices();
   return mediaDevices.filter(device => device.label == deviceLabel);
 }
+
+const getVideoDevicesForMax = () => {
+  getMediaDevices()
+  .then((devices) => {
+    let mediadevices = [];
+    devices.forEach((device) => {
+      if (device.kind === "videoinput") {
+        mediadevices.push(device.label);
+      }
+    });
+    window.max.outlet.apply(window.max, ["mediadevices"].concat(mediadevices));
+  })
+  .catch((err) => {
+    window.max.outlet("error",`${err.name}: ${err.message}`);
+  });
+}
+
 
 const startVideo = () => {
   camera = new Camera(video, {
@@ -224,6 +229,7 @@ poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
   runningMode: runningMode
 })
 
+getVideoDevicesForMax();
 startVideo();
 
 })(); // end IIF
